@@ -1,0 +1,103 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/*
+| The palette is defined once here and consumed as Tailwind utilities
+| (bg-brand-600, text-brand-50) plus a handful of component classes for the
+| repeated card and button shapes, so a colour change stays in one file.
+*/
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-brand-50: oklch(0.97 0.02 240);
+    --color-brand-100: oklch(0.93 0.05 240);
+    --color-brand-200: oklch(0.86 0.08 242);
+    --color-brand-300: oklch(0.77 0.12 244);
+    --color-brand-400: oklch(0.68 0.16 246);
+    --color-brand-500: oklch(0.6 0.18 248);
+    --color-brand-600: oklch(0.52 0.18 250);
+    --color-brand-700: oklch(0.45 0.16 252);
+    --color-brand-800: oklch(0.38 0.13 254);
+    --color-brand-900: oklch(0.32 0.1 256);
+    --color-brand-950: oklch(0.23 0.07 258);
+}
+
+/*
+| `btn` and `chip` are declared as utilities rather than plain component
+| classes because the variants below compose them with @apply, which Tailwind
+| only resolves for real utilities.
+*/
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+        transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600
+        disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+}
+
+@layer components {
+    .card {
+        @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+    }
+
+    .btn-primary {
+        @apply btn bg-brand-600 text-white hover:bg-brand-700 focus-visible:outline-brand-700;
+    }
+
+    .btn-secondary {
+        @apply btn border border-slate-300 bg-white text-slate-700 hover:border-brand-400 hover:text-brand-700;
+    }
+
+    .btn-ghost {
+        @apply btn text-slate-600 hover:bg-brand-50 hover:text-brand-700;
+    }
+
+    .btn-danger {
+        @apply btn border border-rose-300 bg-white text-rose-700 hover:border-rose-400 hover:bg-rose-50
+            focus-visible:outline-rose-600;
+    }
+
+    .field {
+        @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900
+            placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-200
+            focus:outline-none;
+    }
+
+    .label {
+        @apply mb-1.5 block text-sm font-medium text-slate-700;
+    }
+
+    .chip-neutral {
+        @apply chip bg-slate-100 text-slate-700;
+    }
+
+    .chip-brand {
+        @apply chip bg-brand-50 text-brand-700 ring-1 ring-brand-200;
+    }
+
+    .chip-verified {
+        @apply chip bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200;
+    }
+
+    .chip-sold {
+        @apply chip bg-rose-50 text-rose-700 ring-1 ring-rose-200;
+    }
+
+    .chip-active {
+        @apply chip bg-brand-600 text-white ring-1 ring-brand-700;
+    }
+
+    .prose-note {
+        @apply text-sm leading-relaxed text-slate-600;
+    }
+}
+
+/* The gallery swaps the visible photo without re-rendering the page. */
+.gallery-image[hidden] {
+    display: none;
+}

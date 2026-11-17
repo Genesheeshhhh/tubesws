@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title desc">
+    <title id="title">Foto mobil belum tersedia</title>
+    <desc id="desc">Ilustrasi siluet mobil di atas latar biru.</desc>
+    <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e2e8f0"/>
+            <stop offset="1" stop-color="#c7d2e4"/>
+        </linearGradient>
+        <linearGradient id="car" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3b5bdb"/>
+            <stop offset="1" stop-color="#1e3a8a"/>
+        </linearGradient>
+    </defs>
+    <rect width="800" height="600" fill="url(#bg)"/>
+    <circle cx="640" cy="120" r="150" fill="#ffffff" opacity=".18"/>
+    <circle cx="120" cy="500" r="190" fill="#ffffff" opacity=".14"/>
+    <g fill="none" stroke="#1e3a8a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M170 372c0-22 10-36 32-42l38-10 48-58c14-17 33-26 55-26h76c22 0 42 9 56 26l44 54 62 16c25 6 39 21 39 44v40H170z" fill="url(#car)" stroke="none"/>
+        <path d="M262 316h-40l38-46c10-12 24-19 40-19h22v65zM342 316h78l-35-61c-4-8-12-13-21-13h-22zM440 316h74l-39-61c-4-7-11-11-19-11h-16z"/>
+        <circle cx="272" cy="420" r="46" fill="#22304a"/>
+        <circle cx="272" cy="420" r="20" fill="#cbd5e1" stroke="none"/>
+        <circle cx="548" cy="420" r="46" fill="#22304a"/>
+        <circle cx="548" cy="420" r="20" fill="#cbd5e1" stroke="none"/>
+    </g>
+    <text x="400" y="528" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="700" fill="#1e3a8a">Foto belum tersedia</text>
+    <text x="400" y="562" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="19" fill="#475569">Data diambil dari dataset TUBESWS</text>
+</svg>
