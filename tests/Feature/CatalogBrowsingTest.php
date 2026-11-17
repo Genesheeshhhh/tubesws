@@ -32,7 +32,7 @@ class CatalogBrowsingTest extends TestCase
             ->assertViewHas('cars', fn ($cars): bool => $cars->pluck('id')->all() === ['Mobil_6']);
     }
 
-    public function test_the_catalogue_searches_labels_and_models_through_sparql(): void
+    public function test_the_catalogue_searches_labels_and_models(): void
     {
         $this->fakeFuseki();
 
@@ -41,11 +41,51 @@ class CatalogBrowsingTest extends TestCase
             ->assertSee('Honda Brio (2022)')
             ->assertDontSee('BMW 318i (1996)')
             ->assertViewHas('cars', fn ($cars): bool => $cars->pluck('id')->all() === ['Mobil_7']);
+    }
 
-        $this->assertTrue(collect($this->fuseki->queries)->contains(
-            fn (string $query): bool => str_contains($query, 'BIND(LCASE("Brio") AS ?searchTerm)')
-                && str_contains($query, 'CONTAINS(LCASE(?label), ?searchTerm)'),
-        ));
+    public function test_a_misspelled_search_term_is_corrected_and_reported(): void
+    {
+        $this->fakeFuseki();
+
+        $this->get(route('mobil.index', ['q' => 'toyata']))
+            ->assertOk()
+            ->assertSee('Toyota Avanza (2020)')
+            ->assertDontSee('BMW 318i (1996)')
+            ->assertSee('Tidak menemukan')
+            ->assertSee('toyata')
+            ->assertSee('toyota')
+            ->assertViewHas('search', fn (array $search): bool => $search['original'] === 'toyata'
+                && $search['resolved'] === 'toyota'
+                && $search['corrected'] === true);
+    }
+
+    public function test_a_partially_typed_term_still_matches_without_being_corrected(): void
+    {
+        $this->fakeFuseki();
+
+        $this->get(route('mobil.index', ['q' => 'avan']))
+            ->assertOk()
+            ->assertDontSee('Tidak menemukan')
+            ->assertViewHas('search', fn (array $search): bool => $search['corrected'] === false)
+            ->assertViewHas('cars', fn ($cars): bool => $cars->pluck('id')->all() === ['Mobil_6']);
+    }
+
+    public function test_a_multi_word_search_requires_every_token_to_match(): void
+    {
+        $this->fakeFuseki();
+
+        $this->get(route('mobil.index', ['q' => 'toyota matic']))
+            ->assertOk()
+            ->assertViewHas('cars', fn ($cars): bool => $cars->pluck('id')->all() === ['Mobil_6']);
+    }
+
+    public function test_a_search_made_only_of_filler_words_does_not_narrow_the_catalogue(): void
+    {
+        $this->fakeFuseki();
+
+        $this->get(route('mobil.index', ['q' => 'mobil murah']))
+            ->assertOk()
+            ->assertViewHas('cars', fn ($cars): bool => $cars->total() === 3);
     }
 
     public function test_the_catalogue_sorts_by_lowest_price(): void

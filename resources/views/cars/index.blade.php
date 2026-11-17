@@ -106,6 +106,13 @@
         </div>
     </div>
 
+    @if (($search['corrected'] ?? false) && filled($search['original'] ?? null))
+        <p class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-sm text-amber-800">
+            Tidak menemukan “{{ $search['original'] }}”. Menampilkan hasil untuk
+            <strong>{{ $search['resolved'] }}</strong>.
+        </p>
+    @endif
+
     @if ($activeCount > 0)
         <div class="mt-4 flex flex-wrap items-center gap-2">
             @if (filled($filters['q'] ?? null))

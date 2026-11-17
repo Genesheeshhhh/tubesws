@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CarController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SemanticController;
@@ -31,6 +32,20 @@ Route::get('mobil/{car}.ttl', [CarController::class, 'turtle'])
 Route::get('mobil/{car}', [CarController::class, 'show'])
     ->where('car', 'Mobil_[0-9]+')
     ->name('mobil.show');
+
+/*
+|--------------------------------------------------------------------------
+| Asisten katalog (offline)
+|--------------------------------------------------------------------------
+|
+| Menjawab pertanyaan bahasa alami dari data katalog yang sudah dimuat, tanpa
+| memanggil layanan eksternal.
+|
+*/
+
+Route::post('asisten', ChatbotController::class)
+    ->middleware('throttle:30,1')
+    ->name('chatbot.reply');
 
 /*
 |--------------------------------------------------------------------------

@@ -14,6 +14,12 @@ class CarController extends Controller
     public function index(Request $request, CarCatalog $catalog): View
     {
         $filters = $catalog->filtersFrom($request->query());
+        $search = $catalog->resolveSearch($filters['q']);
+
+        if ($search['corrected'] && $search['resolved'] !== null) {
+            $filters['q'] = $search['resolved'];
+        }
+
         $cars = $catalog->paginate($filters);
         $facets = $catalog->facets($filters);
 
@@ -21,6 +27,7 @@ class CarController extends Controller
             'cars' => $cars,
             'facets' => $facets,
             'filters' => $filters,
+            'search' => $search,
             'jsonLd' => [
                 [
                     '@context' => 'https://schema.org',

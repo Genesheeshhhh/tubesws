@@ -67,12 +67,12 @@
                     </ul>
                 </nav>
 
-                <form method="GET" action="{{ route('mobil.index') }}" role="search" class="ml-auto flex w-full gap-2 sm:w-auto">
+                <form method="GET" action="{{ route('mobil.index') }}" role="search" class="ml-auto flex w-full items-center gap-2 sm:w-auto">
                     <label for="global-q" class="sr-only">Cari mobil</label>
                     <input id="global-q" name="q" type="search" value="{{ request()->routeIs('mobil.index') ? request('q') : '' }}"
                         placeholder="Cari Avanza, Toyota, Medan…"
-                        class="field w-full border-white/10 bg-brand-900/70 text-white placeholder:text-brand-300 focus:border-brand-400 focus:ring-brand-500/40 sm:w-72">
-                    <button type="submit" class="btn bg-brand-500 text-white hover:bg-brand-400">Cari</button>
+                        class="field min-w-0 flex-1 border-white/10 bg-brand-900/70 text-white placeholder:text-brand-300 focus:border-brand-400 focus:ring-brand-500/40 sm:w-72 sm:flex-none">
+                    <button type="submit" class="btn shrink-0 bg-brand-500 px-4 text-white hover:bg-brand-400">Cari</button>
                 </form>
             </div>
         </div>
@@ -114,5 +114,7 @@
             </p>
         </div>
     </footer>
+
+    @include('partials.chatbot')
 </body>
 </html>

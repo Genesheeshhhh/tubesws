@@ -12,14 +12,22 @@ use Illuminate\Support\Str;
 /**
  * Reads the whole catalogue from Apache Jena Fuseki and filters it in memory.
  *
- * Keyword searches are sent to Fuseki as part of the listing query. The graph
- * holds 914 vehicles, which is small enough for one SPARQL query to be cheaper
- * and far more predictable than composing a different query for every
- * combination of filters, facets and sort orders. Results are cached for a few
- * minutes because the dataset is read-only between imports.
+ * The whole catalogue is fetched once and filtered, faceted and sorted in
+ * memory. The graph holds 914 vehicles, which is small enough for one SPARQL
+ * query to be cheaper and far more predictable than composing a different
+ * query for every combination of filters, facets and sort orders. Keyword
+ * searches also run in memory so they can be tokenised and typo-corrected
+ * against the catalogue vocabulary. Results are cached for a few minutes
+ * because the dataset is read-only between imports.
  */
 class CarCatalog
 {
+    /** @var array<string, Collection<int, CarListing>> */
+    private array $memo = [];
+
+    /** @var list<string>|null */
+    private ?array $dictionary = null;
+
     public function __construct(private readonly FusekiClient $fuseki) {}
 
     /**
@@ -28,6 +36,11 @@ class CarCatalog
     public function all(?string $term = null): Collection
     {
         $term = $this->searchTerm($term);
+        $memoKey = $term ?? '__all__';
+
+        if (isset($this->memo[$memoKey])) {
+            return $this->memo[$memoKey];
+        }
 
         // Cache the raw SPARQL bindings (plain arrays) rather than a Collection
         // of value objects: file caches across processes are happier with
@@ -38,10 +51,36 @@ class CarCatalog
             fn (): array => $this->fuseki->select($this->listingsQuery($term)),
         );
 
-        return collect($rows)
+        return $this->memo[$memoKey] = collect($rows)
             ->map(fn (array $row): CarListing => $this->hydrate($row))
             ->sortBy('order')
             ->values();
+    }
+
+    /**
+     * Resolve a free-text query to the tokens that will be matched, correcting
+     * likely typos against the catalogue vocabulary (e.g. "toyata" → "toyota").
+     *
+     * @return array{original: ?string, resolved: ?string, tokens: list<string>, corrected: bool}
+     */
+    public function resolveSearch(?string $term): array
+    {
+        $original = $this->searchTerm($term);
+
+        if ($original === null) {
+            return ['original' => null, 'resolved' => null, 'tokens' => [], 'corrected' => false];
+        }
+
+        $corrected = false;
+        $tokens = $this->searchTokens($original, $corrected);
+        $resolved = $tokens === [] ? null : implode(' ', $tokens);
+
+        return [
+            'original' => $original,
+            'resolved' => $resolved,
+            'tokens' => $tokens,
+            'corrected' => $corrected && $resolved !== null,
+        ];
     }
 
     public function find(string $id): ?CarListing
@@ -80,11 +119,19 @@ class CarCatalog
 
     /**
      * @param  array<string, mixed>  $filters
+     * @return Collection<int, CarListing>
+     */
+    public function search(array $filters): Collection
+    {
+        return $this->sort($this->apply($this->all(), $filters), (string) ($filters['sort'] ?? 'terbaru'));
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
      */
     public function paginate(array $filters, int $perPage = 24): LengthAwarePaginator
     {
-        $term = $this->searchTerm($filters['q'] ?? null);
-        $filtered = $this->sort($this->apply($this->all($term), $filters), (string) ($filters['sort'] ?? 'terbaru'));
+        $filtered = $this->search($filters);
 
         $page = Paginator::resolveCurrentPage() ?: 1;
 
@@ -106,7 +153,7 @@ class CarCatalog
      */
     public function facets(array $filters): array
     {
-        $cars = $this->all($this->searchTerm($filters['q'] ?? null));
+        $cars = $this->all();
 
         return [
             'brand' => $this->facetCounts($this->apply($cars, $filters, 'brand'), 'brand', $filters['brand'] ?? [], 15),
@@ -177,6 +224,9 @@ class CarCatalog
 
     public function forgetCache(): void
     {
+        $this->memo = [];
+        $this->dictionary = null;
+
         Cache::forever(
             $this->cacheVersionKey(),
             ((int) Cache::get($this->cacheVersionKey(), 1)) + 1,
@@ -437,8 +487,13 @@ class CarCatalog
         $term = $filters['q'] ?? null;
 
         if (filled($term) && $except !== 'q') {
-            $needle = Str::lower((string) $term);
-            $cars = $cars->filter(fn (CarListing $car): bool => str_contains($car->searchText(), $needle));
+            $tokens = $this->searchTokens((string) $term);
+
+            if ($tokens !== []) {
+                $cars = $cars->filter(
+                    fn (CarListing $car): bool => $this->matchesTokens($car->searchText(), $tokens),
+                );
+            }
         }
 
         $textFilters = [
@@ -489,6 +544,162 @@ class CarCatalog
         }
 
         return $cars;
+    }
+
+    /**
+     * @param  list<string>  $tokens
+     */
+    private function matchesTokens(string $haystack, array $tokens): bool
+    {
+        foreach ($tokens as $token) {
+            if (! str_contains($haystack, $token)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function searchTokens(string $term, bool &$corrected = false): array
+    {
+        $dictionary = $this->dictionary();
+        $tokens = [];
+
+        foreach ($this->tokens($term) as $token) {
+            if (isset($this->stopwords()[$token])) {
+                continue;
+            }
+
+            if (is_numeric($token)) {
+                $tokens[] = $token;
+
+                continue;
+            }
+
+            $resolved = $this->closestToken($token, $dictionary);
+
+            if ($resolved !== null && $resolved !== $token) {
+                $corrected = true;
+            }
+
+            $tokens[] = $resolved ?? $token;
+        }
+
+        return array_values(array_unique($tokens));
+    }
+
+    /**
+     * The vocabulary a typo can be corrected against: every word that appears
+     * in the searchable fields of the catalogue.
+     *
+     * @return list<string>
+     */
+    private function dictionary(): array
+    {
+        if ($this->dictionary !== null) {
+            return $this->dictionary;
+        }
+
+        $words = [];
+
+        foreach ($this->all() as $car) {
+            $haystack = implode(' ', [
+                $car->label,
+                $car->brand,
+                $car->model,
+                $car->bodyType,
+                $car->transmission,
+                $car->drivetrain,
+                $car->fuel,
+                $car->location,
+            ]);
+
+            foreach ($this->tokens($haystack) as $word) {
+                $words[$word] = true;
+            }
+        }
+
+        return $this->dictionary = array_keys($words);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function tokens(string $text): array
+    {
+        $parts = preg_split('/[^a-z0-9]+/u', mb_strtolower($text), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return array_values(array_filter(
+            $parts,
+            fn (string $token): bool => mb_strlen($token) >= 2,
+        ));
+    }
+
+    /**
+     * @param  list<string>  $dictionary
+     */
+    private function closestToken(string $token, array $dictionary): ?string
+    {
+        $token = mb_strtolower($token);
+
+        if (in_array($token, $dictionary, true)) {
+            return $token;
+        }
+
+        // A partially typed word ("avan" for "avanza") is matched as typed.
+        foreach ($dictionary as $word) {
+            if (str_contains($word, $token)) {
+                return $token;
+            }
+        }
+
+        $maxDistance = $this->maxDistance($token);
+        $best = null;
+        $bestDistance = $maxDistance + 1;
+
+        foreach ($dictionary as $word) {
+            if (abs(mb_strlen($word) - mb_strlen($token)) > $maxDistance) {
+                continue;
+            }
+
+            $distance = levenshtein($token, $word);
+
+            if ($distance < $bestDistance) {
+                $best = $word;
+                $bestDistance = $distance;
+            }
+        }
+
+        return $best;
+    }
+
+    private function maxDistance(string $token): int
+    {
+        return match (true) {
+            mb_strlen($token) <= 5 => 1,
+            mb_strlen($token) <= 10 => 2,
+            default => 3,
+        };
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function stopwords(): array
+    {
+        static $stopwords = null;
+
+        return $stopwords ??= array_fill_keys([
+            'mobil', 'mobilnya', 'bekas', 'second', 'used', 'murah', 'bagus',
+            'baru', 'tahun', 'dengan', 'yang', 'dan', 'di', 'ke', 'dari',
+            'untuk', 'cari', 'mencari', 'carikan', 'rekomendasi', 'pilihan',
+            'harga', 'budget', 'bujet', 'anggaran', 'juta', 'jt', 'saya',
+            'aku', 'ingin', 'mau', 'butuh', 'dong', 'ya', 'ada', 'apakah',
+            'apa', 'tolong', 'bantu', 'bisa', 'cocok', 'sih', 'nih', 'itu',
+        ], true);
     }
 
     /**

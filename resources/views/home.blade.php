@@ -32,20 +32,7 @@
                     Bandingkan merek, lokasi, harga, dan skema cicilan dalam satu tempat. Simpan mobil favorit, lalu hubungi penjual saat sudah menemukan pilihan yang tepat.
                 </p>
 
-                <form method="GET" action="{{ route('mobil.index') }}" class="mt-6 flex flex-col gap-2 sm:flex-row" role="search">
-                    <div class="relative flex-1">
-                        <label for="hero-q" class="sr-only">Cari mobil, merek, atau lokasi</label>
-                        <input id="hero-q" name="q" type="search" placeholder="Cari Avanza, Toyota, Medan Petisah…"
-                            class="field h-12 border-white/10 bg-white/95 pl-11 text-slate-900 placeholder:text-slate-500">
-                        <svg class="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <circle cx="11" cy="11" r="7"></circle>
-                            <path d="m20 20-3.5-3.5"></path>
-                        </svg>
-                    </div>
-                    <button type="submit" class="btn h-12 bg-brand-500 px-6 text-white hover:bg-brand-400">Cari mobil</button>
-                </form>
-
-                <div class="mt-4 flex flex-wrap gap-2 text-xs">
+                <div class="mt-6 flex flex-wrap gap-2 text-xs">
                     <a class="rounded-full bg-white/10 px-3 py-1.5 text-brand-100 ring-1 ring-white/15 transition hover:bg-white/20" href="{{ route('mobil.index', ['with_financing' => 1]) }}">Bisa dicicil</a>
                     <a class="rounded-full bg-white/10 px-3 py-1.5 text-brand-100 ring-1 ring-white/15 transition hover:bg-white/20" href="{{ route('mobil.index', ['sort' => 'harga_terendah']) }}">Termurah</a>
                     <a class="rounded-full bg-white/10 px-3 py-1.5 text-brand-100 ring-1 ring-white/15 transition hover:bg-white/20" href="{{ route('mobil.index', ['sort' => 'tahun_terbaru']) }}">Tahun terbaru</a>
