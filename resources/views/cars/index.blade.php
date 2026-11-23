@@ -20,7 +20,8 @@
             + (($filters['min_year'] ?? null) !== null ? 1 : 0)
             + (($filters['max_mileage'] ?? null) !== null ? 1 : 0)
             + (($filters['with_financing'] ?? false) ? 1 : 0)
-            + (($filters['with_image'] ?? false) ? 1 : 0);
+            + (($filters['with_image'] ?? false) ? 1 : 0)
+            + ((($filters['regex'] ?? false) && filled($filters['q'] ?? null)) ? 1 : 0);
 
         $sortLabels = [
             'terbaru' => 'Terbaru',
@@ -113,10 +114,20 @@
         </p>
     @endif
 
+    @if ($filters['regex_error'] ?? false)
+        <p class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-sm text-amber-800">
+            Pola regex tidak valid. Pencarian kata kunci dilakukan tanpa regex.
+        </p>
+    @endif
+
     @if ($activeCount > 0)
         <div class="mt-4 flex flex-wrap items-center gap-2">
             @if (filled($filters['q'] ?? null))
                 <a href="{{ $removeUrl('q') }}" class="chip-brand">{{ $filters['q'] }} <span aria-hidden="true">×</span></a>
+            @endif
+
+            @if ($filters['regex'] ?? false)
+                <a href="{{ $removeUrl('regex') }}" class="chip-brand">Regex <span aria-hidden="true">×</span></a>
             @endif
 
             @foreach ($selected as $key => $values)
@@ -147,7 +158,7 @@
 
     <div class="mt-6 grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)]">
         <aside aria-label="Filter katalog">
-            <form method="GET" action="{{ route('mobil.index') }}" class="card sticky top-24 space-y-5 p-5">
+            <form method="GET" action="{{ route('mobil.index') }}" class="card filter-scroll sticky top-24 max-h-[calc(100vh-7rem)] space-y-5 overflow-y-auto p-5">
                 <input type="hidden" name="sort" value="{{ $filters['sort'] ?? 'terbaru' }}">
 
                 <div class="flex items-center justify-between">
@@ -160,6 +171,13 @@
                 <div>
                     <label for="filter-q" class="label">Kata kunci</label>
                     <input id="filter-q" name="q" type="search" value="{{ $filters['q'] ?? '' }}" placeholder="Avanza, Toyota, Petisah…" class="field">
+                    <label class="mt-2 flex cursor-pointer items-center gap-2 text-xs text-slate-600">
+                        <input id="filter-regex" type="checkbox" name="regex" value="1" @checked(($filters['regex'] ?? false) || ($filters['regex_error'] ?? false)) class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" data-autosubmit>
+                        Gunakan regex (pola pencarian)
+                    </label>
+                    @if ($filters['regex'] ?? false)
+                        <p class="mt-1 text-xs text-slate-500">Contoh: <code class="rounded bg-slate-100 px-1">^(Toyota|Honda).*2020</code></p>
+                    @endif
                 </div>
 
                 <fieldset>
@@ -204,7 +222,7 @@
                                     {{ $group['title'] }}
                                     <span class="text-xs font-normal text-slate-400 group-open:rotate-180 transition" aria-hidden="true">⌄</span>
                                 </summary>
-                                <div class="mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
+                                <div class="filter-scroll mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
                                     @foreach ($facets[$key] as $facet)
                                         <label class="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 text-sm text-slate-700 hover:bg-slate-50">
                                             <input type="checkbox" name="{{ $key }}[]" value="{{ $facet['value'] }}" @checked($facet['selected']) class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" data-autosubmit>

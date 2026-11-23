@@ -33,10 +33,10 @@ class CarCatalog
     /**
      * @return Collection<int, CarListing>
      */
-    public function all(?string $term = null): Collection
+    public function all(?string $term = null, bool $regex = false): Collection
     {
         $term = $this->searchTerm($term);
-        $memoKey = $term ?? '__all__';
+        $memoKey = ($term ?? '__all__').($regex ? ':regex' : '');
 
         if (isset($this->memo[$memoKey])) {
             return $this->memo[$memoKey];
@@ -46,9 +46,9 @@ class CarCatalog
         // of value objects: file caches across processes are happier with
         // arrays, and hydrating 914 rows is cheap.
         $rows = Cache::remember(
-            $this->cacheKey($term),
+            $this->cacheKey($term, $regex),
             now()->addSeconds((int) config('fuseki.cache_ttl', 300)),
-            fn (): array => $this->fuseki->select($this->listingsQuery($term)),
+            fn (): array => $this->fuseki->select($this->listingsQuery($term, $regex)),
         );
 
         return $this->memo[$memoKey] = collect($rows)
@@ -63,9 +63,14 @@ class CarCatalog
      *
      * @return array{original: ?string, resolved: ?string, tokens: list<string>, corrected: bool}
      */
-    public function resolveSearch(?string $term): array
+    public function resolveSearch(?string $term, bool $regex = false): array
     {
         $original = $this->searchTerm($term);
+
+        // A regular expression is intentional syntax, never a typo to rewrite.
+        if ($regex) {
+            return ['original' => $original, 'resolved' => $original, 'tokens' => [], 'corrected' => false];
+        }
 
         if ($original === null) {
             return ['original' => null, 'resolved' => null, 'tokens' => [], 'corrected' => false];
@@ -99,8 +104,14 @@ class CarCatalog
      */
     public function filtersFrom(array $input): array
     {
+        $term = $this->stringOrNull($input['q'] ?? null);
+        $wantsRegex = filter_var($input['regex'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $validRegex = $term === null || $this->regexPattern($term) !== null;
+
         return [
-            'q' => $this->stringOrNull($input['q'] ?? null),
+            'q' => $term,
+            'regex' => $wantsRegex && $term !== null && $validRegex,
+            'regex_error' => $wantsRegex && $term !== null && ! $validRegex,
             'brand' => $this->stringList($input['brand'] ?? null),
             'body_type' => $this->stringList($input['body_type'] ?? null),
             'transmission' => $this->stringList($input['transmission'] ?? null),
@@ -123,7 +134,10 @@ class CarCatalog
      */
     public function search(array $filters): Collection
     {
-        return $this->sort($this->apply($this->all(), $filters), (string) ($filters['sort'] ?? 'terbaru'));
+        $term = $this->searchTerm($filters['q'] ?? null);
+        $regex = (bool) ($filters['regex'] ?? false);
+
+        return $this->sort($this->apply($this->all($term, $regex), $filters), (string) ($filters['sort'] ?? 'terbaru'));
     }
 
     /**
@@ -153,7 +167,10 @@ class CarCatalog
      */
     public function facets(array $filters): array
     {
-        $cars = $this->all();
+        $cars = $this->all(
+            $this->searchTerm($filters['q'] ?? null),
+            (bool) ($filters['regex'] ?? false),
+        );
 
         return [
             'brand' => $this->facetCounts($this->apply($cars, $filters, 'brand'), 'brand', $filters['brand'] ?? [], 15),
@@ -233,10 +250,10 @@ class CarCatalog
         );
     }
 
-    private function cacheKey(?string $term = null): string
+    private function cacheKey(?string $term = null, bool $regex = false): string
     {
         $version = (int) Cache::get($this->cacheVersionKey(), 1);
-        $base = 'fuseki:'.config('fuseki.dataset').":catalogue:live:v{$version}";
+        $base = 'fuseki:'.config('fuseki.dataset').":catalogue:live:v{$version}".($regex ? ':regex' : '');
 
         return $term === null ? $base : $base.':search:'.sha1(Str::lower($term));
     }
@@ -253,7 +270,18 @@ class CarCatalog
         return $term === '' ? null : $term;
     }
 
-    private function searchFilter(?string $term): string
+    /**
+     * Wrap a user pattern in PCRE delimiters, or return null when it is invalid.
+     * The same check keeps a broken pattern from reaching Fuseki as a bad query.
+     */
+    private function regexPattern(string $pattern): ?string
+    {
+        $delimited = '~'.str_replace('~', '\\~', $pattern).'~iu';
+
+        return @preg_match($delimited, '') === false ? null : $delimited;
+    }
+
+    private function searchFilter(?string $term, bool $regex = false): string
     {
         if ($term === null) {
             return '';
@@ -265,26 +293,35 @@ class CarCatalog
             return '';
         }
 
+        $fields = [
+            '?label', '?model', '?yearText',
+            'COALESCE(?brandLabel, "")', 'COALESCE(?bodyTypeLabel, "")',
+            'COALESCE(?transmissionLabel, "")', 'COALESCE(?drivetrainLabel, "")',
+            'COALESCE(?fuelLabel, "")', 'COALESCE(?locationLabel, "")',
+        ];
+
+        $condition = collect($fields)
+            ->map(fn (string $field): string => $regex
+                ? "REGEX({$field}, ?searchTerm, \"i\")"
+                : "CONTAINS(LCASE({$field}), ?searchTerm)")
+            ->implode("\n                || ");
+
+        $bind = $regex
+            ? "BIND({$literal} AS ?searchTerm)"
+            : "BIND(LCASE({$literal}) AS ?searchTerm)";
+
         return <<<SPARQL
-              BIND(LCASE({$literal}) AS ?searchTerm)
+              {$bind}
               FILTER(
-                CONTAINS(LCASE(?label), ?searchTerm)
-                || CONTAINS(LCASE(?model), ?searchTerm)
-                || CONTAINS(LCASE(?yearText), ?searchTerm)
-                || CONTAINS(LCASE(COALESCE(?brandLabel, "")), ?searchTerm)
-                || CONTAINS(LCASE(COALESCE(?bodyTypeLabel, "")), ?searchTerm)
-                || CONTAINS(LCASE(COALESCE(?transmissionLabel, "")), ?searchTerm)
-                || CONTAINS(LCASE(COALESCE(?drivetrainLabel, "")), ?searchTerm)
-                || CONTAINS(LCASE(COALESCE(?fuelLabel, "")), ?searchTerm)
-                || CONTAINS(LCASE(COALESCE(?locationLabel, "")), ?searchTerm)
+                {$condition}
               )
             SPARQL;
     }
 
-    private function listingsQuery(?string $term = null): string
+    private function listingsQuery(?string $term = null, bool $regex = false): string
     {
         $namespace = (string) config('fuseki.namespace');
-        $searchFilter = $this->searchFilter($term);
+        $searchFilter = $this->searchFilter($term, $regex);
 
         return <<<SPARQL
             PREFIX mb: <{$namespace}>
@@ -487,12 +524,22 @@ class CarCatalog
         $term = $filters['q'] ?? null;
 
         if (filled($term) && $except !== 'q') {
-            $tokens = $this->searchTokens((string) $term);
+            $pattern = ($filters['regex'] ?? false) ? $this->regexPattern((string) $term) : null;
 
-            if ($tokens !== []) {
+            if ($pattern !== null) {
+                // Fuseki already applied the same REGEX; keep PHP in sync so the
+                // facets and fake clients answer with the same result set.
                 $cars = $cars->filter(
-                    fn (CarListing $car): bool => $this->matchesTokens($car->searchText(), $tokens),
+                    fn (CarListing $car): bool => preg_match($pattern, $car->searchText()) === 1,
                 );
+            } else {
+                $tokens = $this->searchTokens((string) $term);
+
+                if ($tokens !== []) {
+                    $cars = $cars->filter(
+                        fn (CarListing $car): bool => $this->matchesTokens($car->searchText(), $tokens),
+                    );
+                }
             }
         }
 

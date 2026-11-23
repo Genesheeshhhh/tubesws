@@ -88,6 +88,51 @@ class CatalogBrowsingTest extends TestCase
             ->assertViewHas('cars', fn ($cars): bool => $cars->total() === 3);
     }
 
+    public function test_regex_filter_selects_cars_using_a_regular_expression(): void
+    {
+        $this->fakeFuseki();
+
+        $this->get(route('mobil.index', ['q' => '^(Toyota|Honda)', 'regex' => 1]))
+            ->assertOk()
+            ->assertSee('Toyota Avanza (2020)')
+            ->assertSee('Honda Brio (2022)')
+            ->assertDontSee('BMW 318i (1996)')
+            ->assertViewHas('cars', fn ($cars): bool => $cars->pluck('id')->sort()->values()->all() === ['Mobil_6', 'Mobil_7']);
+
+        $this->assertNotEmpty(array_filter(
+            $this->fuseki->queries,
+            fn (string $query): bool => str_contains($query, 'REGEX('),
+        ));
+    }
+
+    public function test_regex_mode_does_not_correct_the_pattern_as_a_typo(): void
+    {
+        $this->fakeFuseki();
+
+        $this->get(route('mobil.index', ['q' => 'toyata|honda', 'regex' => 1]))
+            ->assertOk()
+            ->assertDontSee('Tidak menemukan')
+            ->assertViewHas('search', fn (array $search): bool => $search['corrected'] === false
+                && $search['original'] === 'toyata|honda')
+            ->assertViewHas('cars', fn ($cars): bool => $cars->pluck('id')->all() === ['Mobil_7']);
+    }
+
+    public function test_an_invalid_regex_falls_back_to_plain_keyword_search(): void
+    {
+        $this->fakeFuseki();
+
+        $this->get(route('mobil.index', ['q' => '[', 'regex' => 1]))
+            ->assertOk()
+            ->assertSee('Pola regex tidak valid')
+            ->assertViewHas('filters', fn (array $filters): bool => $filters['regex'] === false
+                && $filters['regex_error'] === true);
+
+        $this->assertEmpty(array_filter(
+            $this->fuseki->queries,
+            fn (string $query): bool => str_contains($query, 'REGEX('),
+        ));
+    }
+
     public function test_the_catalogue_sorts_by_lowest_price(): void
     {
         $this->fakeFuseki();

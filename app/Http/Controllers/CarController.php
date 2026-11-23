@@ -14,7 +14,7 @@ class CarController extends Controller
     public function index(Request $request, CarCatalog $catalog): View
     {
         $filters = $catalog->filtersFrom($request->query());
-        $search = $catalog->resolveSearch($filters['q']);
+        $search = $catalog->resolveSearch($filters['q'], (bool) ($filters['regex'] ?? false));
 
         if ($search['corrected'] && $search['resolved'] !== null) {
             $filters['q'] = $search['resolved'];
