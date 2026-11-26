@@ -3,7 +3,13 @@
 @section('title', 'Katalog mobil bekas Medan — '.number_format($cars->total()).' iklan')
 @section('meta-description', 'Filter '.number_format($cars->total()).' mobil bekas Medan berdasarkan merek, jenis, transmisi, bahan bakar, lokasi, harga, tahun, dan ketersediaan cicilan.')
 
+{{-- Open Graph untuk halaman katalog --}}
+@section('og-title', 'Katalog mobil bekas Medan — '.number_format($cars->total()).' iklan')
+@section('og-description', 'Temukan dan bandingkan mobil bekas di Medan berdasarkan merek, jenis, transmisi, bahan bakar, lokasi, harga, tahun, dan cicilan.')
+@section('og-url', url()->current())
+
 @section('konten')
+
     @php
         $selected = [
             'brand' => $filters['brand'] ?? [],
@@ -214,27 +220,34 @@
                     </label>
                 </fieldset>
 
-                <div class="space-y-3 border-t border-slate-100 pt-3">
-                    @foreach ($facetGroups as $key => $group)
-                        @if (! empty($facets[$key]))
-                            <details class="group" @if ($group['open'] || $selected[$key] !== []) open @endif>
-                                <summary class="flex cursor-pointer list-none items-center justify-between gap-2 py-1 text-sm font-semibold text-slate-800">
-                                    {{ $group['title'] }}
-                                    <span class="text-xs font-normal text-slate-400 group-open:rotate-180 transition" aria-hidden="true">⌄</span>
-                                </summary>
-                                <div class="filter-scroll mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
-                                    @foreach ($facets[$key] as $facet)
-                                        <label class="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 text-sm text-slate-700 hover:bg-slate-50">
-                                            <input type="checkbox" name="{{ $key }}[]" value="{{ $facet['value'] }}" @checked($facet['selected']) class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" data-autosubmit>
-                                            <span class="min-w-0 flex-1 truncate">{{ $facet['label'] }}</span>
-                                            <span class="text-xs text-slate-400">{{ $facet['count'] }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </details>
-                        @endif
+                
+<div class="space-y-3 border-t border-slate-100 pt-3">
+    @foreach ($facetGroups as $key => $group)
+        @if (! empty($facets[$key]))
+            <details class="group" @if ($group['open'] || $selected[$key] !== []) open @endif>
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-2 py-1 text-sm font-semibold text-slate-800">
+                    {{ $group['title'] }}
+                    <span class="text-xs font-normal text-slate-400 group-open:rotate-180 transition" aria-hidden="true">⌄</span>
+                </summary>
+
+                <div class="filter-scroll mt-2 max-h-64 space-y-1.5 overflow-y-auto pr-1">
+                    @foreach ($facets[$key] as $facet)
+                        <label class="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 text-sm text-slate-700 hover:bg-slate-50">
+                            <input type="checkbox" name="{{ $key }}[]" value="{{ $facet['value'] }}" @checked($facet['selected']) class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" data-autosubmit>
+
+                            <span class="min-w-0 flex-1 truncate">{{ $facet['label'] }}</span>
+
+                            @if ($key !== 'brand')
+                                <span class="text-xs text-slate-400">{{ $facet['count'] }}</span>
+                            @endif
+                        </label>
                     @endforeach
                 </div>
+            </details>
+        @endif
+    @endforeach
+</div>
+
 
                 <div class="flex gap-2 border-t border-slate-100 pt-4">
                     <button type="submit" class="btn-primary flex-1">Terapkan</button>

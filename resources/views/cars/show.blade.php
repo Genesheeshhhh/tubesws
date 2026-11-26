@@ -1,7 +1,11 @@
-@extends('layouts.app')
+text<p class="mt-4 text-xs text-slate-500">@extends('layouts.app')
 
 @section('title', $car->label.' — '.$car->priceLabel())
 @section('meta-description', $car->summary().'. '.$car->label.' di '.$car->location.' seharga '.$car->priceLabel().'.')
+@section('og-title', $car->label.' — '.$car->priceLabel())
+@section('og-description', $car->summary().'. '.$car->label.' di '.$car->location.' seharga '.$car->priceLabel().'.')
+@section('og-url', $car->uri)
+@section('og-image', $car->imageUrl ?: asset('images/car-placeholder.svg'))
 
 @section('konten')
     @php
@@ -9,6 +13,33 @@
         $placeholder = asset('images/car-placeholder.svg');
         $image = filled($car->imageUrl) ? $car->imageUrl : $placeholder;
     @endphp
+
+   <div vocab="https://schema.org/" typeof="Car"
+     resource="{{ $car->uri }}">
+
+    <meta property="name" content="{{ $car->label }}">
+    <meta property="model" content="{{ $car->model }}">
+    <meta property="productionDate" content="{{ $car->year }}">
+    <meta property="vehicleTransmission" content="{{ $car->transmission }}">
+    <meta property="fuelType" content="{{ $car->fuel }}">
+    <meta property="bodyType" content="{{ $car->bodyType }}">
+    <meta property="url" content="{{ $car->offerUri() }}">
+
+    @if ($car->imageUrl)
+        <meta property="image" content="{{ $car->imageUrl }}">
+    @endif
+
+    <div property="brand" typeof="Brand">
+        <meta property="name" content="{{ $car->brand }}">
+    </div>
+
+    <div property="offers" typeof="Offer">
+        <meta property="price" content="{{ $car->price }}">
+        <meta property="priceCurrency" content="IDR">
+        <meta property="url" content="{{ $car->offerUri() }}">
+        <meta property="availability"
+              content="https://schema.org/InStock">
+    </div>
 
     <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
         <ol class="flex flex-wrap items-center gap-2">
@@ -139,6 +170,82 @@
         </div>
     </div>
 
+                    <p class="mt-4 text-xs text-slate-500">
+                    Lokasi: <span class="font-medium text-slate-700">{{ $car->location }}</span>
+                </p>
+
+                {{-- Integrasi OpenStreetMap --}}
+<section class="mt-6 rounded-2xl border border-slate-200 p-5">
+    <h2 class="text-lg font-bold text-slate-900">
+        Peta Lokasi
+    </h2>
+
+    <p class="mt-1 text-sm text-slate-500">
+        {{ $car->location }}, Medan, Sumatera Utara
+    </p>
+
+    <div class="mt-4 overflow-hidden rounded-xl">
+        <iframe
+            title="Peta lokasi {{ $car->location }}"
+            width="100%"
+            height="300"
+            loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=98.60%2C3.50%2C98.80%2C3.70&layer=mapnik"
+            class="w-full border-0"
+        ></iframe>
+    </div>
+
+    <a
+        href="https://www.openstreetmap.org/search?query={{ urlencode($car->location.', Medan, Sumatera Utara') }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="mt-3 inline-block text-sm font-semibold text-brand-700 hover:underline"
+    >
+        Cari lokasi di OpenStreetMap →
+    </a>
+
+    <p class="mt-2 text-xs text-slate-400">
+        Peta menampilkan wilayah Medan, bukan koordinat persis lokasi iklan.
+    </p>
+</section>
+
+            </div>
+
+            {{-- Informasi dari Wikidata --}}
+            @if ($brandWikidata)
+                <section class="card mt-6 p-6">
+                    <div class="flex items-center justify-between gap-3">
+                        <h2 class="text-lg font-bold text-slate-900">
+                            Informasi dari Wikidata
+                        </h2>
+
+                        <span class="chip-verified">Dataset eksternal</span>
+                    </div>
+
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold text-slate-800">
+                            {{ $brandWikidata['label'] }}
+                        </p>
+
+                        <p class="mt-2 text-sm text-slate-600">
+                            {{ $brandWikidata['description'] }}
+                        </p>
+
+                        <a
+                            href="https://www.wikidata.org/wiki/{{ $brandWikidata['id'] }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="mt-4 inline-block text-sm font-semibold text-brand-700 hover:underline"
+                        >
+                            Lihat sumber Wikidata →
+                        </a>
+                    </div>
+                </section>
+            @endif
+
+        </div>
+    </div>
+
     @if ($related->isNotEmpty())
         <section class="mt-12" aria-labelledby="terkait-heading">
             <div class="flex flex-wrap items-end justify-between gap-3">
@@ -155,5 +262,7 @@
                 @endforeach
             </div>
         </section>
-    @endif
+       @endif
+
+</div>
 @endsection

@@ -218,6 +218,11 @@ final readonly class CarListing
         ]));
     }
 
+        public function offerUri(): string
+    {
+        return $this->uri;
+    }
+
     /**
      * Short JSON-LD description used on the detail page. The full semantic
      * representation is the RDF graph in Fuseki, not this convenience copy.

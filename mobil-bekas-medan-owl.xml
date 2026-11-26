@@ -383,151 +383,211 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_BMW">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>BMW</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q26678"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_BYD">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>BYD</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q27423"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Chery">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Chery</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q98172997"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Chevrolet">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Chevrolet</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q29570"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_DFSK">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>DFSK</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q55608782"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Daihatsu">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Daihatsu</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q27511"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Datsun">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Datsun</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q27543"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Ford">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Ford</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q20827633"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Honda">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Honda</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q124966298"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Hyundai">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Hyundai</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q125054811"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Isuzu">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Isuzu</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q29803"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Jaecoo">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Jaecoo</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q124255702"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Jeep">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Jeep</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q30113"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Jetour">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Jetour</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q98145436"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Kia">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Kia</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q35349"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Land_Rover">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Land Rover</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q26777551"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Lexus">
-        <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
-        <rdfs:label>Lexus</rdfs:label>
-    </owl:NamedIndividual>
+    <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
+    <rdfs:label>Lexus</rdfs:label>
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_MG">
-        <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
-        <rdfs:label>MG</rdfs:label>
-    </owl:NamedIndividual>
+    <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q35919"/>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_MG">
+    <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
+    <rdfs:label>MG</rdfs:label>
+
+    <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q1881443"/>
+</owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Mazda">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Mazda</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q125055033"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Mercedes_Benz">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Mercedes-Benz</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q36008"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Mini_Cooper">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Mini Cooper</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q23907681"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Mitsubishi">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Mitsubishi</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q63118791"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Nissan">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Nissan</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q125130399"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Porsche">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Porsche</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q124966804"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Renault">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Renault</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q125544573"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Suzuki">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Suzuki</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q125553067"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Toyota">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Toyota</rdfs:label>
+    
+        <rdfs:seeAlso rdf:resource="http://www.wikidata.org/entity/Q53268"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Volkswagen">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Volkswagen</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q246"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Volvo">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Volvo</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q20827600"/>
     </owl:NamedIndividual>
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur_Wuling">
         <rdf:type rdf:resource="http://www.semanticweb.org/mobil-bekas-medan#Manufaktur"/>
         <rdfs:label>Wuling</rdfs:label>
+    
+        <owl:sameAs rdf:resource="http://www.wikidata.org/entity/Q137285395"/>
     </owl:NamedIndividual>
 
     <rdf:Description>
