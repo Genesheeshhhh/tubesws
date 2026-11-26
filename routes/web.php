@@ -35,11 +35,11 @@ Route::get('mobil/{car}', [CarController::class, 'show'])
 
 /*
 |--------------------------------------------------------------------------
-| Asisten katalog (offline)
+| Asisten katalog (hybrid)
 |--------------------------------------------------------------------------
 |
-| Menjawab pertanyaan bahasa alami dari data katalog yang sudah dimuat, tanpa
-| memanggil layanan eksternal.
+| Gemini opsional menerjemahkan pertanyaan menjadi filter; hasil dan fakta
+| tetap dihitung dari dataset TUBESWS. Tanpa API key, memakai aturan lokal.
 |
 */
 

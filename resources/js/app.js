@@ -184,7 +184,13 @@ if (chatbot) {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': csrf,
                 },
-                body: JSON.stringify({ message: text }),
+                body: JSON.stringify({
+                    message: text,
+                    context: {
+                        page: `${window.location.pathname}${window.location.search}`,
+                        car: chatbot.dataset.chatbotCar || '',
+                    },
+                }),
             });
 
             if (!response.ok) {

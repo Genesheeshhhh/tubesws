@@ -4,18 +4,25 @@
         'SUV matic bisa dicicil',
         'Mobil termurah',
         'Toyota Avanza',
+        'Regex: Toyota|Brio',
         'Ada berapa mobil?',
     ];
+
+    $chatUsesAi = in_array(config('gemini.provider'), ['auto', 'ai'], true)
+        && filled(config('gemini.api_key'));
 @endphp
 
 <div data-chatbot data-placeholder="{{ asset('images/car-placeholder.svg') }}"
+    data-chatbot-car="{{ request()->route('car') ?? '' }}"
     class="fixed inset-x-4 bottom-4 z-50 flex flex-col items-end gap-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[26rem]">
     <section id="asisten-panel" data-chatbot-panel aria-labelledby="asisten-title" hidden
         class="card flex max-h-[min(80vh,40rem)] w-full flex-col overflow-hidden shadow-2xl shadow-brand-950/20">
         <header class="flex items-start justify-between gap-3 border-b border-brand-800 bg-brand-950 px-4 py-3 text-white">
             <div>
                 <h2 id="asisten-title" class="text-sm font-bold tracking-tight">Asisten mobil</h2>
-                <p class="mt-0.5 text-xs text-brand-300">Offline · menjawab dari katalog lokal</p>
+                <p class="mt-0.5 text-xs text-brand-300">
+                    {{ $chatUsesAi ? 'AI · tetap dibatasi katalog lokal' : 'Offline · menjawab dari katalog lokal' }}
+                </p>
             </div>
             <button type="button" data-chatbot-close
                 class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-lg text-brand-200 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"

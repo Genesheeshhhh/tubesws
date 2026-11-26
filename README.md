@@ -14,6 +14,7 @@ Aplikasi katalog **mobil bekas di Medan** berbasis Laravel yang seluruh data kat
 - [Instalasi & menjalankan aplikasi](#instalasi--menjalankan-aplikasi)
 - [Rute penting](#rute-penting)
 - [Konsol SPARQL](#konsol-sparql)
+- [Asisten katalog hybrid](#asisten-katalog-hybrid)
 - [Format RDF & data terstruktur](#format-rdf--data-terstruktur)
 - [Integrasi layanan eksternal](#integrasi-layanan-eksternal)
 - [Pengujian](#pengujian)
@@ -27,7 +28,7 @@ Aplikasi katalog **mobil bekas di Medan** berbasis Laravel yang seluruh data kat
 2. **Katalog mobil** — pencarian teks dengan koreksi typo (mis. `toyata` → `toyota`) dan mode regex; filter merek, jenis, transmisi, penggerak, bahan bakar, lokasi, harga, tahun, kilometer, cicilan, dan foto; pengurutan, pagination, serta URL filter yang bisa dibagikan.
 3. **Detail iklan** — foto, spesifikasi, harga dan diskon, simulasi cicilan, layanan penjual, peta lokasi (Leaflet + OpenStreetMap/Nominatim), tombol WhatsApp, mobil terkait, dan informasi merek dari Wikidata.
 4. **Favorit** — disimpan di session (tanpa login dan tanpa tabel database), dengan penanda jumlah di navbar.
-5. **Asisten katalog** — chatbot berbasis aturan, tanpa API berbayar; memahami budget, merek (termasuk alias seperti `mercy`, `vw`), transmisi, jenis, lokasi, cicilan, tahun, dan kilometer; mengembalikan tautan katalog yang sudah terfilter.
+5. **Asisten katalog hybrid** — Gemini opsional memahami bahasa alami, tetapi semua harga, jumlah, dan filter divalidasi terhadap dataset; tanpa API key tetap berjalan offline dengan aturan (alias `mercy`, `vw`, regex `Toyota|Brio`, dll.) dan mengembalikan tautan katalog terfilter.
 6. **Web semantik** — eksplorasi kelas/predikat OWL, statement RDF per individu, demo RDFa, unduhan graf Turtle, dan ontologi sumber RDF/XML.
 7. **Konsol SPARQL** — menjalankan SELECT/ASK/CONSTRUCT terhadap dataset lokal **atau** endpoint publik Wikidata/DBpedia, dengan contoh query untuk masing-masing endpoint dan endpoint JSON mentah.
 
@@ -59,7 +60,8 @@ Laravel (Blade + Tailwind)
         │        (cache 300 detik)          TUBESWS      dataset TUBESWS
         │
         ├── FavoriteController ──► session (tanpa database)
-        ├── CarChatbot ──► aturan + kosakata dari graf
+        ├── AiChatbot ──► Gemini (opsional) ──► JSON filter
+        │        └──► CarChatbot + CarCatalog ──► Fakta tetap dari graf
         └── SparqlController ──► FusekiClient (lokal)
                            └──► ExternalSparqlClient (Wikidata / DBpedia)
 ```
@@ -106,6 +108,13 @@ FUSEKI_CACHE_TTL=300
 SPARQL_DEFAULT_ENDPOINT=lokal
 WIKIDATA_SPARQL_URL=https://query.wikidata.org/sparql
 DBPEDIA_SPARQL_URL=https://dbpedia.org/sparql
+
+# Asisten katalog hybrid (kosongkan API key untuk tetap offline)
+CHATBOT_PROVIDER=auto
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-flash-lite-latest
+GEMINI_TIMEOUT=12
+GEMINI_CACHE_TTL=300
 ```
 
 > Koneksi PostgreSQL lama sengaja dibiarkan di `config/database.php` untuk kebutuhan lain, tetapi **tidak dipakai** untuk katalog.
@@ -129,7 +138,7 @@ Buka `http://localhost:8000`.
 | `GET /mobil` | Katalog + filter + pencarian |
 | `GET /mobil/Mobil_{id}` | Detail iklan (RDFa + peta + WhatsApp) |
 | `GET /mobil/Mobil_{id}.ttl` | Turtle untuk satu iklan |
-| `POST /asisten` | Balasan chatbot (JSON) |
+| `POST /asisten` | Balasan chatbot (JSON, opsional membawa `context.page` dan `context.car`) |
 | `GET /favorit` | Daftar favorit dari session |
 | `GET /semantik` | Statistik dan struktur dataset |
 | `GET /semantik/rdfa` | Contoh laman RDFa |
@@ -170,6 +179,34 @@ Parameter `endpoint=lokal|wikidata|dbpedia` juga diterima oleh rute `/semantik/s
 
 ---
 
+## Asisten katalog hybrid
+
+Asisten memakai pola **AI sebagai parser, katalog sebagai sumber kebenaran**:
+
+```
+Pertanyaan + konteks halaman + kosakata dari graf
+        │
+        ▼
+Gemini → JSON { filters, answer }   (bukan jawaban final)
+        │
+        ▼
+CarCatalog::filtersFrom() + search()  ← validasi & fakta dari Fuseki
+        │
+        ▼
+{ reply, cars, filters, url, suggestions }
+```
+
+- **Grounding**: prompt diisi nama/deskripsi situs, kosakata merek, lokasi, jenis, transmisi, penggerak, bahan bakar, dan statistik yang benar-benar ada di graf. Konteks halaman dikirim dari browser sebagai `context.page` dan `context.car`, sehingga pertanyaan seperti “yang ini bisa dicicil?” merujuk ke iklan yang sedang dibuka.
+- **Koreksi typo**: `q` dari aturan maupun Gemini melewati `CarCatalog::resolveSearch()`, memakai kamus yang sama dengan search bar. `toyata` menjadi `toyota`, dan koreksinya ditampilkan di balasan serta ikut ke URL katalog. Pola regex sengaja tidak dikoreksi.
+- **Validasi**: keluaran Gemini wajib JSON. Filter tetap melewati `CarCatalog::filtersFrom()`, jadi nilai asing, tipe salah, atau sort tidak dikenal tidak bisa menghasilkan hasil palsu. Jika tidak ada mobil cocok, teks generatif **tidak dipakai**.
+- **Regex di chatbot**: kata kunci `regex`, `regexp`, `pola`, atau `pattern` diikuti pola PCRE, misalnya `regex Toyota|Brio`, `regex: "Toyota|Avanza"`, atau `pola Brio`. Pola diteruskan sebagai `q` + `regex=true` ke katalog (Fuseki `REGEX(..., "i")`), divalidasi sebelum query, dan link katalog ikut membawa `regex=1`. Pola rusak seperti `regex [` dibalas dengan pesan kesalahan yang jelas. AiChatbot juga bisa menghasilkan `{"regex":true,"q":"Toyota|Avanza"}` bila pengguna meminta pola.
+- **Fallback**: API key kosong, `CHATBOT_PROVIDER=rules`, timeout, HTTP error, atau balasan bukan JSON → otomatis memakai `CarChatbot` rule-based yang lama. Sapaan, bantuan, terima kasih, dan pertanyaan “ada berapa mobil” sengaja tetap dijawab aturan agar angkanya tidak dikarang.
+- **Tanpa biaya tersembunyi**: cache jawaban AI identik selama `GEMINI_CACHE_TTL` detik; throttle 30 request/menit tetap aktif di rute `/asisten`.
+
+Konfigurasi ada di `config/gemini.php`. Nilai `CHATBOT_PROVIDER` yang diterima: `auto` (pakai AI bila ada key), `ai` (tetap fallback bila gagal), dan `rules` (tidak pernah memanggil AI). **Jangan commit `GEMINI_API_KEY`.**
+
+---
+
 ## Format RDF & data terstruktur
 
 | Bentuk | Contoh | Keterangan |
@@ -187,7 +224,7 @@ Parameter `endpoint=lokal|wikidata|dbpedia` juga diterima oleh rute `/semantik/s
 - **Wikidata** — halaman detail mencari tautan `owl:sameAs`/`rdfs:seeAlso` di graf lokal, lalu mengambil label dan deskripsi entitas melalui endpoint SPARQL Wikidata. Kegagalan jaringan tidak membuat halaman error.
 - **OpenStreetMap / Nominatim** — peta Leaflet dengan tile OSM dan geocoding nama kecamatan; fallback ke pusat Medan bila geocoding gagal.
 - **WhatsApp** — tombol “Tanya via WhatsApp” memakai nomor penjual dari data iklan jika tersedia.
-- **Asisten katalog** — sepenuhnya offline, memakai kosakata yang memang ada di graf.
+- **Asisten katalog** — hybrid: Gemini opsional, fallback offline, dan kosakata yang memang ada di graf.
 
 ---
 
@@ -197,7 +234,7 @@ Parameter `endpoint=lokal|wikidata|dbpedia` juga diterima oleh rute `/semantik/s
 php artisan test
 ```
 
-Test feature memakai `FakeFusekiClient` dan `Http::fake`, sehingga tidak membutuhkan Fuseki maupun akses internet. Cakupan meliputi katalog, chatbot, favorit, RDFa, graf Turtle, halaman detail, dan konsol SPARQL lokal/eksternal.
+Test feature memakai `FakeFusekiClient` dan `Http::fake`, sehingga tidak membutuhkan Fuseki, Gemini, maupun akses internet. Secara default `phpunit.xml` menetapkan `CHATBOT_PROVIDER=rules` dan `GEMINI_API_KEY` kosong; test AI menyalakan Gemini secara eksplisit dengan key palsu. Cakupan meliputi katalog, chatbot aturan dan hybrid (termasuk fallback), favorit, RDFa, graf Turtle, halaman detail, dan konsol SPARQL lokal/eksternal.
 
 ---
 
@@ -211,9 +248,10 @@ app/
 │   ├── Fuseki/             # FusekiClient, SparqlResult
 │   ├── Sparql/             # ExternalSparqlClient (Wikidata/DBpedia)
 │   ├── Semantic/           # Ontologi, builder graf, serialisasi Turtle
-│   ├── Chatbot/            # CarChatbot (rule-based)
+│   ├── Chatbot/            # AiChatbot (hybrid), CarChatbot (rule-based)
+│   ├── Gemini/             # GeminiClient (JSON-only)
 │   └── Wikidata/           # WikidataClient
-config/                     # fuseki.php, semantic.php, sparql.php, maps.php
+config/                     # fuseki.php, semantic.php, sparql.php, gemini.php, maps.php
 database/                   # skema lama (tidak dipakai katalog)
 resources/views/
 ├── cars/ semantic/ favorites/

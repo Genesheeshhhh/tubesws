@@ -20,6 +20,7 @@ class CarChatbot
         'SUV matic bisa dicicil',
         'Mobil termurah',
         'Toyota Avanza',
+        'Regex: Toyota|Brio',
         'Ada berapa mobil?',
     ];
 
@@ -102,9 +103,10 @@ class CarChatbot
      */
     public function reply(string $message): array
     {
-        $text = $this->normalize($message);
+        [$withoutRegex, $regexPattern] = $this->extractRegex($message);
+        $text = $this->normalize($withoutRegex);
 
-        if ($text === '') {
+        if ($text === '' && $regexPattern === null) {
             return $this->helpReply();
         }
 
@@ -124,17 +126,97 @@ class CarChatbot
             return $this->statisticsReply();
         }
 
-        return $this->searchReply($text);
+        return $this->searchReply($text, $regexPattern);
+    }
+
+    /**
+     * Build the same answer payload from filters that have been validated by
+     * CarCatalog::filtersFrom(). The AI wrapper uses this method so generated
+     * filters can never bypass the catalogue's own normalisation and search.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{reply: string, cars: list<array<string, mixed>>, filters: array<string, mixed>, url: ?string, suggestions: list<string>}
+     */
+    public function replyFromFilters(array $filters, string $answer = ''): array
+    {
+        $filters = $this->catalog->filtersFrom($filters);
+
+        if (($filters['regex_error'] ?? false) === true) {
+            return $this->payload(
+                'Pola regex tidak valid. Coba contoh: "regex Toyota|Brio". Pencarian kata kunci dilakukan tanpa regex.',
+                [],
+                $filters,
+            );
+        }
+
+        // The search bar explicitly uses resolveSearch() to show its correction.
+        // Do the same here so the chatbot's q, reply and catalogue link all use
+        // the nearest known vocabulary token instead of the visitor's typo.
+        $correctionNote = '';
+
+        if (filled($filters['q']) && ($filters['regex'] ?? false) !== true) {
+            $original = (string) $filters['q'];
+            $resolved = $this->catalog->resolveSearch($original);
+
+            if ($resolved['corrected'] === true && $resolved['resolved'] !== null) {
+                $filters['q'] = $resolved['resolved'];
+                $correctionNote = 'Saya artikan "'.$original.'" sebagai "'.$resolved['resolved'].'". ';
+            }
+        }
+
+        $matches = $this->catalog->search($filters);
+        $prefix = trim($answer) === '' ? '' : rtrim(trim($answer), " \t\n\r\0\x0B.").'. ';
+
+        if ($matches->isEmpty()) {
+            // Do not reuse generated prose here: there are no facts to ground it.
+            return $this->payload(
+                $correctionNote.'Belum ada mobil yang cocok dengan permintaan itu. Coba naikkan budget, ganti transmisi, atau hapus salah satu filter.',
+                filters: $filters,
+            );
+        }
+
+        $top = $matches->take(5)->values();
+        $description = $this->describe($filters);
+        $reply = $prefix.$correctionNote.'Saya menemukan '.number_format($matches->count(), 0, ',', '.').' mobil'
+            .($description !== '' ? ' ('.$description.')' : '').'.';
+
+        if ($matches->count() > $top->count()) {
+            $reply .= ' Berikut '.$top->count().' pilihan teratas.';
+        }
+
+        return $this->payload(
+            $reply,
+            $top->map(fn (CarListing $car): array => $this->carPayload($car))->all(),
+            $filters,
+            route('mobil.index', $this->queryParams($filters)),
+        );
+    }
+
+    /**
+     * A short, fact-free answer (greeting, clarification, failed AI parsing)
+     * that still uses the normal response shape and suggestion list.
+     */
+    public function answerOnly(string $reply): array
+    {
+        return $this->payload(
+            $reply === '' ? 'Saya belum bisa menjawab itu. Coba sebutkan budget atau merek mobil.' : $reply,
+            [],
+            $this->emptyFilters(),
+        );
     }
 
     /**
      * @return array{reply: string, cars: list<array<string, mixed>>, filters: array<string, mixed>, url: ?string, suggestions: list<string>}
      */
-    private function searchReply(string $text): array
+    private function searchReply(string $text, ?string $regexPattern = null): array
     {
         $cars = $this->catalog->all();
         $filters = $this->emptyFilters();
         $consumed = [];
+
+        if ($regexPattern !== null) {
+            $filters['regex'] = true;
+        }
 
         $sort = $this->detectSort($text);
 
@@ -204,32 +286,11 @@ class CarChatbot
             $consumed[] = $location;
         }
 
-        $filters['q'] = $this->keywords($text, $consumed, $this->hasStructuredFilters($filters), $cars);
+        // An explicit regex pattern replaces free-text keywords: it is already
+        // the exact search term the catalogue should hand to Fuseki REGEX.
+        $filters['q'] = $regexPattern ?? $this->keywords($text, $consumed, $this->hasStructuredFilters($filters), $cars);
 
-        $matches = $this->catalog->search($filters);
-
-        if ($matches->isEmpty()) {
-            return $this->payload(
-                'Belum ada mobil yang cocok dengan permintaan itu. Coba naikkan budget, ganti transmisi, atau hapus salah satu filter.',
-                filters: $filters,
-            );
-        }
-
-        $top = $matches->take(5)->values();
-        $description = $this->describe($filters);
-        $reply = 'Saya menemukan '.number_format($matches->count(), 0, ',', '.').' mobil'
-            .($description !== '' ? ' ('.$description.')' : '').'.';
-
-        if ($matches->count() > $top->count()) {
-            $reply .= ' Berikut '.$top->count().' pilihan teratas.';
-        }
-
-        return $this->payload(
-            $reply,
-            $top->map(fn (CarListing $car): array => $this->carPayload($car))->all(),
-            $filters,
-            route('mobil.index', $this->queryParams($filters)),
-        );
+        return $this->replyFromFilters($filters);
     }
 
     /**
@@ -330,8 +391,47 @@ class CarChatbot
             'max_mileage' => null,
             'with_financing' => false,
             'with_image' => false,
+            'regex' => false,
+            'regex_error' => false,
             'sort' => 'terbaru',
         ];
+    }
+
+    /**
+     * Pull an explicit regex pattern out of the raw message before normalize()
+     * removes metacharacters such as | ( ) [ ] ^ $.
+     *
+     * Accepted forms: "regex Toyota|Avanza", 'regex: "Toyota|Avanza"',
+     * "pola Toyota", "pattern: Brio".
+     *
+     * @return array{string, string|null}
+     */
+    private function extractRegex(string $message): array
+    {
+        if (preg_match(
+            '/(?:regexp?|regular expression|pola|pattern)\s*[:=]?\s*(?:"([^"]+)"|\'([^\']+)\'|`([^`]+)`|([^\s]+))/iu',
+            $message,
+            $matches,
+            PREG_OFFSET_CAPTURE,
+        ) !== 1) {
+            return [$message, null];
+        }
+
+        $fullMatch = (string) $matches[0][0];
+        $offset = (int) $matches[0][1];
+        $pattern = '';
+
+        foreach (array_slice($matches, 1) as $group) {
+            if (isset($group[0]) && $group[0] !== '') {
+                $pattern = trim((string) $group[0]);
+                break;
+            }
+        }
+
+        $pattern = rtrim($pattern, " \t\n\r\0\x0B?.,;:!\"'");
+        $rest = substr($message, 0, $offset).substr($message, $offset + strlen($fullMatch));
+
+        return [$rest, $pattern === '' ? null : $pattern];
     }
 
     private function normalize(string $text): string
@@ -609,6 +709,10 @@ class CarChatbot
             $params['with_image'] = 1;
         }
 
+        if (($filters['regex'] ?? false) === true) {
+            $params['regex'] = 1;
+        }
+
         if ($filters['sort'] !== 'terbaru') {
             $params['sort'] = $filters['sort'];
         }
@@ -624,7 +728,7 @@ class CarChatbot
         $parts = [];
 
         if (filled($filters['q'])) {
-            $parts[] = 'kata kunci "'.$filters['q'].'"';
+            $parts[] = (($filters['regex'] ?? false) === true ? 'pola regex' : 'kata kunci').' "'.$filters['q'].'"';
         }
 
         if ($filters['brand'] !== []) {
@@ -710,6 +814,7 @@ class CarChatbot
             'rb', 'km', 'kilometer', 'tahun', 'unit', 'stok', 'tersedia',
             'pilihan', 'terbaik', 'termurah', 'termahal', 'terbaru', 'paling',
             'tampilkan', 'lihat', 'mohon', 'hallo', 'halo', 'hai', 'hi',
+            'regex', 'regexp', 'pola', 'pattern', 'pakai', 'menggunakan',
             'keluarga', 'harian', 'hemat', 'irit', 'nyaman', 'aman', 'awet',
         ], true);
     }
