@@ -201,6 +201,26 @@ class SparqlController extends Controller
                     LIMIT 25
                     SPARQL,
             ],
+
+            [
+                'title' => 'Mobil tanpa foto (Negasi)',
+                'description' => 'Menggunakan FILTER NOT EXISTS untuk mencari mobil yang tidak memiliki gambar.',
+                'query' => <<<SPARQL
+                    PREFIX mb: <{$mb}>
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                    SELECT ?nama
+                    WHERE {
+                    ?mobil a mb:MobilBekas ;
+                            rdfs:label ?nama .
+
+                    FILTER NOT EXISTS {
+                        ?mobil mb:gambarURL ?foto .
+                    }
+                    }
+                    LIMIT 25
+                    SPARQL,
+            ],
         ];
     }
 }

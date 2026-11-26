@@ -13,7 +13,7 @@ class FusekiClientTest extends TestCase
     public function test_select_flattens_sparql_json_bindings(): void
     {
         Http::fake([
-            '*/TUBESWS/query' => Http::response([
+            '*/query' => Http::response([
                 'head' => ['vars' => ['n']],
                 'results' => ['bindings' => [
                     ['n' => ['type' => 'literal', 'value' => '914']],
@@ -29,7 +29,7 @@ class FusekiClientTest extends TestCase
     public function test_ask_returns_the_boolean_answer(): void
     {
         Http::fake([
-            '*/TUBESWS/query' => Http::response(['boolean' => true]),
+            '*/query' => Http::response(['boolean' => true]),
         ]);
 
         $this->assertTrue($this->app->make(FusekiClient::class)->ask('ASK { ?s ?p ?o }'));
@@ -38,7 +38,7 @@ class FusekiClientTest extends TestCase
     public function test_a_failed_query_throws_a_fuseki_exception(): void
     {
         Http::fake([
-            '*/TUBESWS/query' => Http::response('Encountered " <bad>"', 400),
+            '*/query' => Http::response('Encountered " <bad>"', 400),
         ]);
 
         $this->expectException(FusekiException::class);

@@ -16,6 +16,14 @@
     <title>@yield('title', config('semantic.name'))</title>
     <meta name="description" content="@yield('meta-description', $description)">
     <meta name="theme-color" content="#1e3a8a">
+    {{-- Open Graph Protocol --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config('semantic.name') }}">
+    <meta property="og:title" content="@yield('og-title', config('semantic.name'))">
+    <meta property="og:description" content="@yield('og-description', $description)">
+    <meta property="og:url" content="@yield('og-url', url()->current())">
+    <meta property="og:image" content="@yield('og-image', asset('images/car-placeholder.svg'))">
+    <meta property="og:locale" content="id_ID">
 
     @foreach (($jsonLd ?? []) as $graph)
         <script type="application/ld+json">@json($graph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)</script>

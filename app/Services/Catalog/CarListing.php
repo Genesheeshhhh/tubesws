@@ -218,6 +218,11 @@ final readonly class CarListing
         ]));
     }
 
+        public function offerUri(): string
+    {
+        return $this->uri;
+    }
+
     /**
      * Deep link to the catalogue's WhatsApp contact with the listing details
      * already filled in. The graph has no per-seller phone number, so the
