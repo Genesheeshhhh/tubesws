@@ -2,6 +2,10 @@
 
 @section('title', $car->label.' — '.$car->priceLabel())
 @section('meta-description', $car->summary().'. '.$car->label.' di '.$car->location.' seharga '.$car->priceLabel().'.')
+@section('og-title', $car->label.' — '.$car->priceLabel())
+@section('og-description', $car->summary().'. '.$car->label.' di '.$car->location.' seharga '.$car->priceLabel().'.')
+@section('og-url', $car->uri)
+@section('og-image', $car->imageUrl ?: asset('images/car-placeholder.svg'))
 
 @section('konten')
     @php
@@ -155,6 +159,38 @@
     </div>
 
     @include('partials.car-map', ['car' => $car])
+
+    {{-- Informasi dari Wikidata --}}
+    @if ($brandWikidata)
+        <section class="card mt-6 p-6">
+            <div class="flex items-center justify-between gap-3">
+                <h2 class="text-lg font-bold text-slate-900">
+                    Informasi dari Wikidata
+                </h2>
+
+                <span class="chip-verified">Dataset eksternal</span>
+            </div>
+
+            <div class="mt-4">
+                <p class="text-sm font-semibold text-slate-800">
+                    {{ $brandWikidata['label'] }}
+                </p>
+
+                <p class="mt-2 text-sm text-slate-600">
+                    {{ $brandWikidata['description'] }}
+                </p>
+
+                <a
+                    href="https://www.wikidata.org/wiki/{{ $brandWikidata['id'] }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mt-4 inline-block text-sm font-semibold text-brand-700 hover:underline"
+                >
+                    Lihat sumber Wikidata →
+                </a>
+            </div>
+        </section>
+    @endif
 
     @if ($related->isNotEmpty())
         <section class="mt-12" aria-labelledby="terkait-heading">

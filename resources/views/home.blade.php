@@ -2,8 +2,16 @@
 
 @section('title', config('semantic.name').' — Katalog mobil bekas Medan')
 @section('meta-description', 'Jelajahi '.number_format($statistics['total']).' mobil bekas di Medan. Bandingkan merek, lokasi, harga, dan skema cicilan untuk menemukan mobil yang tepat.')
+@section('og-title', 'Mobil Bekas Medan — Katalog Mobil Bekas')
+@section('og-description', 'Temukan dan bandingkan mobil bekas di Medan berdasarkan harga, merek, lokasi, dan spesifikasi.')
 
 @section('konten')
+    <div vocab="https://schema.org/" typeof="WebSite">
+        <meta property="name" content="{{ config('semantic.name') }}">
+        <meta property="description" content="Katalog mobil bekas di Medan dengan informasi harga, lokasi, merek, dan cicilan.">
+        <meta property="inLanguage" content="id">
+
+        {{-- Seluruh konten homepage yang sudah ada tetap di sini --}}
     @php
         $highest = (int) $statistics['highest'];
         $highestLabel = $highest >= 1_000_000_000
@@ -70,15 +78,16 @@
             <a href="{{ route('mobil.index') }}" class="text-sm font-semibold text-brand-700 hover:underline">Lihat semua mobil →</a>
         </div>
 
-        <div class="mt-4 flex flex-wrap gap-2">
-            @foreach ($brandFacets as $facet)
-                <a href="{{ route('mobil.index', ['brand' => [$facet['value']]]) }}"
-                    class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-300 hover:text-brand-700">
-                    {{ $facet['label'] }}
-                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{{ $facet['count'] }}</span>
-                </a>
-            @endforeach
-        </div>
+        
+    <div class="mt-4 flex flex-wrap gap-2">
+        @foreach ($brandFacets as $facet)
+            <a href="{{ route('mobil.index', ['brand' => [$facet['value']]]) }}"
+                class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-300 hover:text-brand-700">
+                {{ $facet['label'] }}
+            </a>
+        @endforeach
+    </div>
+
     </section>
 
     @if ($featured->isNotEmpty())
@@ -178,4 +187,5 @@
             </div>
         </section>
     @endif
+    </div>
 @endsection

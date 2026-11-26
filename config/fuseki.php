@@ -35,7 +35,9 @@ return [
     |
     */
 
-    'ontology_path' => env('FUSEKI_ONTOLOGY', base_path('mobil-bekas-medan-owl.xml')),
+   
+    'ontology_path' => base_path(env('FUSEKI_ONTOLOGY', 'mobil-bekas-medan-owl.xml')),
+
 
     'ontology_url' => env('FUSEKI_ONTOLOGY_URL', 'http://www.semanticweb.org/mobil-bekas-medan'),
 
