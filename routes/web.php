@@ -69,6 +69,7 @@ Route::delete('favorit/{car}', [FavoriteController::class, 'destroy'])->name('fa
 
 Route::prefix('semantik')->name('semantik.')->group(function (): void {
     Route::get('/', [SemanticController::class, 'index'])->name('index');
+    Route::get('rdfa', [SemanticController::class, 'rdfa'])->name('rdfa');
     Route::get('mobil/{car}', [SemanticController::class, 'show'])
         ->where('car', 'Mobil_[0-9]+')
         ->name('show');

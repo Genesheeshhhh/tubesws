@@ -8,7 +8,14 @@
         $isFavorite = in_array($car->id, session('favorit', []), true);
         $placeholder = asset('images/car-placeholder.svg');
         $image = filled($car->imageUrl) ? $car->imageUrl : $placeholder;
+        $whatsappUrl = $car->whatsappUrl(route('mobil.show', ['car' => $car->id]));
     @endphp
+
+    <div vocab="https://schema.org/"
+         prefix="xsd: http://www.w3.org/2001/XMLSchema# mb: {{ config('semantic.namespaces.mb') }}"
+         typeof="Vehicle"
+         resource="{{ $car->uri }}">
+        @include('partials.rdfa-facts', ['car' => $car])
 
     <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
         <ol class="flex flex-wrap items-center gap-2">
@@ -129,6 +136,14 @@
                             {{ $isFavorite ? 'Hapus dari favorit' : 'Simpan ke favorit' }}
                         </button>
                     </form>
+
+                    @if ($whatsappUrl !== null)
+                        <a href="{{ $whatsappUrl }}" class="btn bg-emerald-600 text-white hover:bg-emerald-700"
+                           target="_blank" rel="noopener noreferrer">
+                            <span aria-hidden="true">💬</span>
+                            Tanya via WhatsApp
+                        </a>
+                    @endif
                 </div>
 
                 <p class="mt-4 text-xs text-slate-500">
@@ -138,6 +153,8 @@
 
         </div>
     </div>
+
+    @include('partials.car-map', ['car' => $car])
 
     @if ($related->isNotEmpty())
         <section class="mt-12" aria-labelledby="terkait-heading">
@@ -156,4 +173,5 @@
             </div>
         </section>
     @endif
+    </div>
 @endsection

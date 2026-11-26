@@ -22,6 +22,7 @@
     @endforeach
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 </head>
 <body class="flex min-h-full flex-col bg-slate-50 font-sans text-slate-900 antialiased">
     <a href="#konten" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 focus:shadow-lg">
@@ -62,6 +63,18 @@
                                 @if ($favoriteCount > 0)
                                     <span class="rounded-full bg-brand-500 px-2 py-0.5 text-[11px] font-bold text-white">{{ $favoriteCount }}</span>
                                 @endif
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('semantik.index') }}"
+                                @class([
+                                    'ml-1 inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold transition',
+                                    'bg-brand-700 text-white ring-1 ring-brand-400' => request()->routeIs('semantik.*'),
+                                    'bg-brand-800 text-brand-50 ring-1 ring-brand-700 hover:bg-brand-700' => ! request()->routeIs('semantik.*'),
+                                ])
+                                @if (request()->routeIs('semantik.*')) aria-current="page" @endif>
+                                <span aria-hidden="true">◈</span>
+                                Web Semantik
                             </a>
                         </li>
                     </ul>
@@ -116,5 +129,6 @@
     </footer>
 
     @include('partials.chatbot')
+    @stack('scripts')
 </body>
 </html>

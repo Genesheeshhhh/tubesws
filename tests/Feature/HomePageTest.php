@@ -45,19 +45,21 @@ class HomePageTest extends TestCase
         $this->assertStringContainsString('{search_term_string}', $jsonLd[0]['potentialAction']['target']['urlTemplate']);
     }
 
-    public function test_public_pages_do_not_expose_semantic_tools(): void
+    public function test_public_pages_expose_a_semantic_section_button(): void
     {
         $this->fakeFuseki();
 
-        $this->get(route('beranda'))
-            ->assertOk()
-            ->assertDontSee('Web semantik')
-            ->assertDontSee('SPARQL');
-
-        $this->get(route('mobil.index'))
-            ->assertOk()
-            ->assertDontSee('Web semantik')
-            ->assertDontSee('SPARQL');
+        foreach ([
+            route('beranda'),
+            route('mobil.index'),
+            route('mobil.show', ['car' => 'Mobil_5']),
+        ] as $url) {
+            $this->get($url)
+                ->assertOk()
+                ->assertSee('Web Semantik')
+                ->assertSee(route('semantik.index'), false)
+                ->assertDontSee('SPARQL');
+        }
     }
 
     public function test_an_empty_graph_still_renders_both_entry_pages(): void

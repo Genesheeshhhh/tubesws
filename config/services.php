@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | WhatsApp
+    |--------------------------------------------------------------------------
+    |
+    | Nomor kontak katalog yang dipakai untuk tautan wa.me di halaman detail.
+    | Data graf tidak menyimpan nomor penjual per iklan, jadi satu nomor
+    | pusat dipakai untuk semua unit.
+    |
+    */
+
+    'whatsapp' => [
+        'number' => env('WHATSAPP_NUMBER', '085277027100'),
+    ],
+
 ];

@@ -22,6 +22,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('semantik.graph') }}" class="btn-secondary">Unduh graf (.ttl)</a>
+            <a href="{{ route('semantik.rdfa') }}" class="btn-secondary">Laman RDFa</a>
             <a href="{{ route('semantik.sparql') }}" class="btn-primary">Konsol SPARQL</a>
         </div>
     </div>

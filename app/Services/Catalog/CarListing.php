@@ -219,6 +219,34 @@ final readonly class CarListing
     }
 
     /**
+     * Deep link to the catalogue's WhatsApp contact with the listing details
+     * already filled in. The graph has no per-seller phone number, so the
+     * destination comes from configuration.
+     */
+    public function whatsappUrl(?string $sourceUrl = null): ?string
+    {
+        $number = preg_replace('/\D+/', '', (string) config('services.whatsapp.number'));
+
+        if ($number === null || $number === '') {
+            return null;
+        }
+
+        $number = match (true) {
+            str_starts_with($number, '0') => '62'.substr($number, 1),
+            str_starts_with($number, '8') => '62'.$number,
+            default => $number,
+        };
+
+        $message = implode("\n", array_filter([
+            'Halo, saya tertarik dengan '.$this->label.' ('.$this->priceLabel().').',
+            'Lokasi: '.$this->location.'.',
+            filled($sourceUrl) ? 'Detail: '.$sourceUrl : null,
+        ], fn (?string $line): bool => filled($line)));
+
+        return 'https://wa.me/'.$number.'?text='.rawurlencode($message);
+    }
+
+    /**
      * Short JSON-LD description used on the detail page. The full semantic
      * representation is the RDF graph in Fuseki, not this convenience copy.
      *

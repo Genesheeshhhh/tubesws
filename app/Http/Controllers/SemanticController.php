@@ -13,10 +13,7 @@ class SemanticController extends Controller
 {
     public function index(CarCatalog $catalog, OntologyCatalogue $ontology): View
     {
-        $sample = $catalog->all()
-            ->filter(fn (CarListing $car): bool => filled($car->imageUrl))
-            ->sortByDesc('postedAt')
-            ->first();
+        $sample = $this->sampleListing($catalog);
 
         return view('semantic.index', [
             'statistics' => $ontology->statistics(),
@@ -45,6 +42,15 @@ class SemanticController extends Controller
             'car' => $listing,
             'statements' => $ontology->statementsFor($listing->uri),
         ]);
+    }
+
+    public function rdfa(CarCatalog $catalog): View
+    {
+        $car = $this->sampleListing($catalog);
+
+        abort_if($car === null, 404);
+
+        return view('semantic.rdfa', ['car' => $car]);
     }
 
     public function graph(OntologyCatalogue $ontology): Response
@@ -79,5 +85,13 @@ class SemanticController extends Controller
         return response()->download($path, 'mobil-bekas-medan-owl.xml', [
             'Content-Type' => 'application/rdf+xml',
         ]);
+    }
+
+    private function sampleListing(CarCatalog $catalog): ?CarListing
+    {
+        return $catalog->all()
+            ->filter(fn (CarListing $car): bool => filled($car->imageUrl))
+            ->sortByDesc('postedAt')
+            ->first();
     }
 }

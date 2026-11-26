@@ -16,6 +16,12 @@
         $grouped = collect($statements)->groupBy(fn (array $statement): string => $statement['predicateLabel']);
     @endphp
 
+    <div vocab="https://schema.org/"
+         prefix="xsd: http://www.w3.org/2001/XMLSchema# mb: {{ config('semantic.namespaces.mb') }}"
+         typeof="Vehicle"
+         resource="{{ $car->uri }}">
+        @include('partials.rdfa-facts', ['car' => $car])
+
     <nav aria-label="Breadcrumb" class="text-sm text-slate-500">
         <ol class="flex flex-wrap items-center gap-2">
             <li><a href="{{ route('beranda') }}" class="hover:text-brand-700">Beranda</a></li>
@@ -126,8 +132,10 @@
                     <a href="{{ route('mobil.turtle', ['car' => $car->id]) }}" class="btn-secondary w-full">Turtle subjek</a>
                     <a href="{{ route('semantik.graph') }}" class="btn-secondary w-full">Turtle seluruh graf</a>
                     <a href="{{ route('semantik.sparql', ['query' => 'DESCRIBE <'.$car->uri.'>']) }}" class="btn-ghost w-full">Jalankan DESCRIBE</a>
+                    <a href="{{ route('semantik.rdfa') }}" class="btn-ghost w-full">Lihat laman RDFa</a>
                 </div>
             </section>
         </div>
+    </div>
     </div>
 @endsection
