@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'SPARQL explorer — dataset '.$dataset['name'])
-@section('meta-description', 'Jalankan query SPARQL 1.1 terhadap dataset '.$dataset['name'].' di Apache Jena Fuseki.')
+@section('title', 'SPARQL explorer — '.$endpoint['label'])
+@section('meta-description', 'Jalankan query SPARQL 1.1 terhadap '.$endpoint['label'].' dari konsol SPARQL TUBESWS.')
 
 @section('konten')
     @php
@@ -28,8 +28,8 @@
         <div>
             <h1 class="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">SPARQL explorer</h1>
             <p class="prose-note mt-1 max-w-3xl">
-                Query dikirim apa adanya ke <span class="font-mono text-xs">{{ $dataset['query'] }}</span>.
-                Dukungan SELECT, ASK, CONSTRUCT, dan DESCRIBE mengikuti kemampuan Fuseki.
+                Query dikirim apa adanya ke <span class="font-mono text-xs">{{ $endpoint['url'] }}</span>.
+                Dukungan SELECT, ASK, dan CONSTRUCT mengikuti kemampuan endpoint yang dipilih.
             </p>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -41,7 +41,18 @@
     <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div class="space-y-6">
             <form method="GET" action="{{ route('semantik.sparql') }}" class="card p-5">
-                <div class="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                    <label for="endpoint" class="text-sm font-bold text-slate-900">Endpoint</label>
+                    <select id="endpoint" name="endpoint"
+                        class="field mt-2 w-full bg-white focus:border-brand-500 focus:ring-brand-200">
+                        @foreach ($endpoints as $option)
+                            <option value="{{ $option['key'] }}" @selected($option['key'] === $endpointKey)>{{ $option['label'] }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-slate-500">{{ $endpoint['description'] }}</p>
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-end justify-between gap-2">
                     <label for="query" class="text-sm font-bold text-slate-900">Query</label>
                     <span class="text-xs text-slate-500">Ctrl/Cmd + Enter untuk menjalankan</span>
                 </div>
@@ -53,7 +64,7 @@
                     <button type="submit" class="btn-primary">Jalankan query</button>
                     <a href="{{ route('semantik.sparql') }}" class="btn-secondary">Kosongkan</a>
                     @if ($query !== '')
-                        <a href="{{ route('semantik.sparql.query', ['query' => $query]) }}" class="btn-ghost" target="_blank" rel="noopener">Buka JSON mentah</a>
+                        <a href="{{ route('semantik.sparql.query', ['query' => $query, 'endpoint' => $endpointKey]) }}" class="btn-ghost" target="_blank" rel="noopener">Buka JSON mentah</a>
                     @endif
                 </div>
             </form>
@@ -77,7 +88,7 @@
 
                     @if ($result->kind === 'ask')
                         <div class="p-5">
-                            <p class="text-sm text-slate-600">Jawaban Fuseki:</p>
+                            <p class="text-sm text-slate-600">Jawaban endpoint:</p>
                             <p class="mt-2 inline-flex rounded-xl px-4 py-2 text-lg font-bold {{ $result->boolean ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
                                 {{ $result->boolean ? 'true' : 'false' }}
                             </p>
@@ -139,7 +150,7 @@
 
             <section class="card p-5" aria-labelledby="contoh-heading">
                 <h2 id="contoh-heading" class="text-lg font-bold tracking-tight text-slate-900">Contoh query</h2>
-                <p class="prose-note mt-1">Klik “Jalankan” untuk memuat contoh ke editor.</p>
+                <p class="prose-note mt-1">Contoh mengikuti endpoint yang sedang dipilih. Klik “Jalankan contoh ini” untuk memuat sekaligus menjalankannya.</p>
 
                 <div class="mt-4 space-y-2">
                     @foreach ($examples as $example)
@@ -154,6 +165,7 @@
                             <div class="border-t border-slate-100 p-4">
                                 <pre class="overflow-x-auto rounded-xl bg-slate-950 p-3 font-mono text-[11px] leading-relaxed text-slate-100">{{ $example['query'] }}</pre>
                                 <form method="GET" action="{{ route('semantik.sparql') }}" class="mt-3">
+                                    <input type="hidden" name="endpoint" value="{{ $endpointKey }}">
                                     <input type="hidden" name="query" value="{{ $example['query'] }}">
                                     <button type="submit" class="btn-secondary">Jalankan contoh ini</button>
                                 </form>
@@ -166,30 +178,39 @@
 
         <div class="space-y-5">
             <section class="card p-5" aria-labelledby="endpoint-heading">
-                <h2 id="endpoint-heading" class="text-base font-bold text-slate-900">Endpoint</h2>
+                <h2 id="endpoint-heading" class="text-base font-bold text-slate-900">Endpoint aktif</h2>
                 <dl class="mt-3 space-y-3 text-xs">
                     <div>
-                        <dt class="text-slate-500">Dataset</dt>
-                        <dd class="font-mono break-all text-slate-800">{{ $dataset['name'] }}</dd>
+                        <dt class="text-slate-500">Nama</dt>
+                        <dd class="font-medium text-slate-800">{{ $endpoint['label'] }}</dd>
                     </div>
                     <div>
-                        <dt class="text-slate-500">Query (POST)</dt>
-                        <dd class="font-mono break-all text-slate-800">{{ $dataset['query'] }}</dd>
+                        <dt class="text-slate-500">Query (GET/POST)</dt>
+                        <dd class="font-mono break-all text-slate-800">{{ $endpoint['url'] }}</dd>
                     </div>
+                    @if ($endpointKey !== 'lokal')
+                        <div>
+                            <dt class="text-slate-500">Dataset lokal</dt>
+                            <dd class="font-mono break-all text-slate-800">{{ $dataset['name'] }} · {{ $dataset['query'] }}</dd>
+                        </div>
+                    @endif
                 </dl>
 
                 <p class="mt-4 text-xs text-slate-500">Akses langsung dari terminal:</p>
-                <pre class="mt-2 overflow-x-auto rounded-xl bg-slate-950 p-3 font-mono text-[10px] text-slate-100"><code>curl -s {{ $dataset['query'] }} \
+                <pre class="mt-2 overflow-x-auto rounded-xl bg-slate-950 p-3 font-mono text-[10px] text-slate-100"><code>curl -G -s "{{ $endpoint['url'] }}" \
   --data-urlencode "query=SELECT * WHERE { ?s ?p ?o } LIMIT 5" \
-  -H "Accept: application/sparql-results+json"</code></pre>
+  -H "Accept: application/sparql-results+json" \
+  -H "User-Agent: TUBESWS/1.0"</code></pre>
             </section>
 
             <section class="card p-5" aria-labelledby="tips-heading">
                 <h2 id="tips-heading" class="text-base font-bold text-slate-900">Tips</h2>
                 <ul class="mt-3 space-y-2 text-sm text-slate-600">
-                    <li>Gunakan prefiks <span class="font-mono text-xs">mb:</span> untuk namespace ontologi.</li>
+                    <li>Gunakan prefiks <span class="font-mono text-xs">mb:</span> untuk namespace ontologi lokal.</li>
+                    <li>Hanya endpoint yang terdaftar di <span class="font-mono text-xs">config/sparql.php</span> yang bisa dipilih.</li>
+                    <li>Query ke Wikidata/DBpedia memakai data publik di luar dataset lokal.</li>
                     <li>Batasi hasil dengan <span class="font-mono text-xs">LIMIT</span> saat eksplorasi.</li>
-                    <li>Query hanya baca; endpoint update tidak diekspos ke halaman ini.</li>
+                    <li>Query bersifat read-only; endpoint update tidak diekspos ke halaman ini.</li>
                 </ul>
             </section>
         </div>
