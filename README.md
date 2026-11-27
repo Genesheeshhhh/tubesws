@@ -50,22 +50,87 @@ Aplikasi katalog **mobil bekas di Medan** berbasis Laravel yang seluruh data kat
 
 ## Arsitektur singkat
 
-```
-Browser / pengguna
-        │
-        ▼
-Laravel (Blade + Tailwind)
-        │
-        ├── CarCatalog ──► FusekiClient ──► SPARQL      Apache Jena Fuseki
-        │        (cache 300 detik)          TUBESWS      dataset TUBESWS
-        │
-        ├── FavoriteController ──► session (tanpa database)
-        │        └──► CarChatbot + CarCatalog ──► Fakta tetap dari graf
-        └── SparqlController ──► FusekiClient (lokal)
-                           └──► ExternalSparqlClient (Wikidata / DBpedia)
+### Alur permintaan katalog
+
+```mermaid
+flowchart TD
+    U[Pengguna di browser] --> R[HTTP request]
+    R --> RT[Laravel Router]
+    RT --> C[HomeController atau CarController]
+    C --> CC[CarCatalog]
+    CC --> CACHE{Data katalog ada di cache?}
+    CACHE -- Ya --> ROWS[Bindings SPARQL tersimpan]
+    CACHE -- Tidak --> FC[FusekiClient]
+    FC --> Q[SPARQL query]
+    Q --> F[Apache Jena Fuseki<br/>dataset TUBESWS]
+    F --> ROWS
+    ROWS --> SAVE[Cache data mentah<br/>TTL 300 detik]
+    SAVE --> HYD[Hydrasi menjadi CarListing]
+    ROWS --> HYD
+    HYD --> PROC[Filter, pencarian, facet,<br/>pengurutan, statistik]
+    PROC --> V[Blade view + data terstruktur<br/>JSON-LD / RDFa bila relevan]
+    V --> OUT[HTML dikirim ke browser]
 ```
 
-Katalog dibaca sekali per permintaan lalu difilter, difacet, dan diurutkan di memori. Data bersifat read-only sampai diimport ulang, sehingga cache singkat aman dan membuat halaman tetap cepat.
+`CarCatalog` mengambil katalog dari Fuseki melalui `FusekiClient`. Hasil query mentah disimpan di cache, kemudian diubah menjadi `CarListing` dan diproses di memori untuk pencarian, filter, facet, pengurutan, serta pagination. Katalog tidak dibaca dari PostgreSQL/MySQL.
+
+### Alur fitur dan integrasi
+
+```mermaid
+flowchart LR
+    B[Browser]
+
+    B --> HOME[Beranda<br/>HomeController]
+    B --> CAT[Katalog dan detail<br/>CarController]
+    B --> CHAT[POST /asisten<br/>throttle + validasi]
+    B --> FAV[Favorit<br/>FavoriteController]
+    B --> SEM[Fitur semantik<br/>SemanticController]
+    B --> SP[SPARQL<br/>SparqlController]
+
+    HOME --> CC[CarCatalog]
+    CAT --> CC
+    CHAT --> BOT[CarChatbot<br/>aturan lokal]
+    BOT --> CC
+    CC --> CACHE[Cache Laravel]
+    CACHE --> FUSEKI[FusekiClient]
+    FUSEKI --> DATA[(Fuseki<br/>dataset TUBESWS)]
+
+    FAV --> SESSION[Session browser/server<br/>menyimpan ID favorit]
+    FAV --> CC
+
+    SEM --> FUSEKI
+    SEM --> RDF[Ontologi dan serializer RDF]
+    RDF --> DOWNLOAD[HTML, Turtle, RDF/XML]
+
+    SP --> ALLOW[Endpoint berdasarkan allowlist]
+    ALLOW --> FUSEKI
+    ALLOW --> EXT[ExternalSparqlClient<br/>Wikidata / DBpedia]
+
+    CAT -. data merek .-> WD[WikidataClient]
+    WD -. label dan deskripsi .-> WDS[Wikidata SPARQL]
+    CAT -. peta .-> MAP[Leaflet + OpenStreetMap<br/>Nominatim]
+
+    HOME --> RESPONSE[Blade / HTML]
+    CAT --> RESPONSE
+    CHAT --> JSON[Respons JSON]
+    FAV --> RESPONSE
+    SEM --> DOWNLOAD
+    SP --> SPRESULT[Hasil SPARQL<br/>JSON / CSV / RDF]
+```
+
+### Ringkasan komponen
+
+| Lapisan | Komponen | Tanggung jawab |
+|---|---|---|
+| Antarmuka | Browser, Blade, Tailwind, JavaScript | Menampilkan halaman, mengirim pencarian, dan menerima respons HTML/JSON/RDF. |
+| Routing | `routes/web.php` dan controller Laravel | Memetakan URL ke proses beranda, katalog, favorit, asisten, dan web semantik. |
+| Logika aplikasi | `CarCatalog`, `CarChatbot`, layanan semantik | Memvalidasi filter, menyusun hasil katalog, menjawab pertanyaan berbasis data lokal, dan menyiapkan representasi RDF. |
+| Cache | Cache Laravel, TTL 300 detik | Mengurangi query berulang ke Fuseki; data katalog mentah di-cache sebelum diproses. |
+| Penyimpanan katalog | Apache Jena Fuseki, dataset `TUBESWS` | Sumber data katalog dan graf RDF yang dibaca aplikasi melalui SPARQL. |
+| State pengguna | Session Laravel | Menyimpan ID mobil favorit; tidak menggunakan tabel database untuk favorit. |
+| Integrasi | Wikidata, DBpedia, OpenStreetMap/Nominatim | Menyediakan informasi merek, query SPARQL eksternal, dan peta. |
+
+Untuk memuat ulang graf sumber RDF/XML setelah Fuseki berjalan, jalankan `php artisan fuseki:load --replace`. Perintah ini mengunggah graf ke dataset dan membersihkan cache Laravel agar permintaan berikutnya membaca data terbaru.
 
 ---
 
