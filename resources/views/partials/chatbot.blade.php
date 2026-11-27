@@ -7,21 +7,19 @@
         'Regex: Toyota|Brio',
         'Ada berapa mobil?',
     ];
-
-    $chatUsesAi = in_array(config('gemini.provider'), ['auto', 'ai'], true)
-        && filled(config('gemini.api_key'));
 @endphp
 
+{{-- Leaflet panes use z-index 400-800, so the assistant must sit above them. --}}
 <div data-chatbot data-placeholder="{{ asset('images/car-placeholder.svg') }}"
     data-chatbot-car="{{ request()->route('car') ?? '' }}"
-    class="fixed inset-x-4 bottom-4 z-50 flex flex-col items-end gap-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[26rem]">
+    class="fixed inset-x-4 bottom-4 z-[1000] flex flex-col items-end gap-3 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[26rem]">
     <section id="asisten-panel" data-chatbot-panel aria-labelledby="asisten-title" hidden
         class="card flex max-h-[min(80vh,40rem)] w-full flex-col overflow-hidden shadow-2xl shadow-brand-950/20">
         <header class="flex items-start justify-between gap-3 border-b border-brand-800 bg-brand-950 px-4 py-3 text-white">
             <div>
                 <h2 id="asisten-title" class="text-sm font-bold tracking-tight">Asisten mobil</h2>
                 <p class="mt-0.5 text-xs text-brand-300">
-                    {{ $chatUsesAi ? 'AI · tetap dibatasi katalog lokal' : 'Offline · menjawab dari katalog lokal' }}
+                    Offline · menjawab dari katalog lokal
                 </p>
             </div>
             <button type="button" data-chatbot-close

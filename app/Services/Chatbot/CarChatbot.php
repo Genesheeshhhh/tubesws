@@ -130,9 +130,9 @@ class CarChatbot
     }
 
     /**
-     * Build the same answer payload from filters that have been validated by
-     * CarCatalog::filtersFrom(). The AI wrapper uses this method so generated
-     * filters can never bypass the catalogue's own normalisation and search.
+     * Build the answer payload from filters that have been validated by
+     * CarCatalog::filtersFrom(), so no filter can bypass the catalogue's own
+     * normalisation and search.
      *
      * @param  array<string, mixed>  $filters
      * @return array{reply: string, cars: list<array<string, mixed>>, filters: array<string, mixed>, url: ?string, suggestions: list<string>}
@@ -193,8 +193,8 @@ class CarChatbot
     }
 
     /**
-     * A short, fact-free answer (greeting, clarification, failed AI parsing)
-     * that still uses the normal response shape and suggestion list.
+     * A short, fact-free answer (greeting or clarification) that still uses
+     * the normal response shape and suggestion list.
      */
     public function answerOnly(string $reply): array
     {
